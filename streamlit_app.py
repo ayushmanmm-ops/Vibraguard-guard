@@ -472,7 +472,12 @@ st.dataframe(
     use_container_width=True
 )
 
+# ------------------------------------------
+# STAGE 4.2 - EXPERIMENT HISTORY STORAGE
+# ------------------------------------------
 
+if "experiment_history" not in st.session_state:
+    st.session_state.experiment_history = []
 # ------------------------------------------
 # AI PREDICTION WITH CONFIDENCE ANALYSIS
 # ------------------------------------------
@@ -572,7 +577,73 @@ st.caption(
     "Confidence percentages are model probability estimates, "
     "not verified real-world reliability or structural safety."
 )
+# ------------------------------------------
+# SAVE EXPERIMENT
+# ------------------------------------------
 
+st.divider()
+st.header("🗂️ Stage 4.2: Experiment History")
+
+if st.button("💾 Save Experiment to History"):
+
+    already_saved = any(
+        item["Trial"] == int(trial)
+        and item["Selected Condition"] == condition
+        for item in st.session_state.experiment_history
+    )
+
+    if already_saved:
+
+        st.warning(
+            "This trial and condition have already been saved."
+        )
+
+    else:
+
+        experiment = {
+            "Trial": int(trial),
+            "Selected Condition": condition,
+            "AI Prediction": current_prediction,
+            "AI Probability (%)": round(float(confidence), 2),
+            "RMS": round(float(metrics["RMS"]), 4),
+            "Dominant Frequency (Hz)": round(
+                float(metrics["Dominant Frequency (Hz)"]), 4
+            )
+        }
+
+        st.session_state.experiment_history.append(experiment)
+
+        st.success("Experiment saved successfully!")
+
+# ------------------------------------------
+# DISPLAY EXPERIMENT HISTORY
+# ------------------------------------------
+
+st.subheader("📋 Previous Experiments")
+
+if st.session_state.experiment_history:
+
+    history_df = pd.DataFrame(
+        st.session_state.experiment_history
+    )
+
+    st.dataframe(
+        history_df,
+        use_container_width=True,
+        hide_index=True
+    )
+
+    st.write(
+        "Total saved experiments:",
+        len(history_df)
+    )
+
+else:
+
+    st.info(
+        "No experiments saved yet. "
+        "Click Save Experiment to record your first trial."
+    )
 
 
 # Feature importance
