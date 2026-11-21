@@ -1,19 +1,18 @@
+
 [project]
 name = "blank-app-template"
 version = "0.1.0"
-description = "A simple Streamlit app template."
-readme = "README.md"
+description = "VIBRAGUARD"
 requires-python = ">=3.14"
 dependencies = [
     "streamlit>=1.61.1",
     "numpy",
     "pandas",
     "scikit-learn",
-[tool.poetry]
-package-mode = false
-
 ]
 
-    
+[tool.uv]
+package = false
 
-
+[tool.poetry]
+package-mode = false
