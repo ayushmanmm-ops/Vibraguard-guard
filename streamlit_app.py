@@ -472,26 +472,108 @@ st.dataframe(
     use_container_width=True
 )
 
-# Predict current simulated trial
 
-st.subheader("🔮 Current Trial Classification")
+# ------------------------------------------
+# AI PREDICTION WITH CONFIDENCE ANALYSIS
+# ------------------------------------------
+
+st.subheader("🔮 Current Trial AI Classification")
+
+# Prepare current trial features
 
 current_features = pd.DataFrame(
     [[metrics[name] for name in feature_columns]],
     columns=feature_columns
 )
 
+# Predict bridge condition
+
 current_prediction = model.predict(current_features)[0]
 
+# Calculate class probabilities
+
+probabilities = model.predict_proba(current_features)[0]
+
+# Match probabilities with their condition names
+
+probability_df = pd.DataFrame({
+    "Condition": model.classes_,
+    "Probability": probabilities
+})
+
+probability_df["Percentage"] = (
+    probability_df["Probability"] * 100
+)
+
+# Display predicted condition
+
+st.markdown("### 🧠 AI Prediction")
+
+st.success(
+    f"Predicted Bridge Condition: {current_prediction}"
+)
+
+# Display model confidence
+
+confidence = np.max(probabilities) * 100
+
 st.metric(
-    "Model Classification",
+    "Model Confidence",
+    f"{confidence:.2f}%"
+)
+
+# Display all condition probabilities
+
+st.markdown("### 📊 Condition Probability Analysis")
+
+for _, row in probability_df.iterrows():
+
+    st.write(
+        f"**{row['Condition']} — "
+        f"{row['Percentage']:.2f}%**"
+    )
+
+    st.progress(
+        float(row["Probability"])
+    )
+
+# Compare selected condition with prediction
+
+st.markdown("### 🔍 Experiment Comparison")
+
+col1, col2 = st.columns(2)
+
+col1.metric(
+    "Selected Condition",
+    condition
+)
+
+col2.metric(
+    "AI Predicted Condition",
     current_prediction
 )
 
+if condition == current_prediction:
+
+    st.success(
+        "The AI prediction matches the selected "
+        "simulated experiment condition."
+    )
+
+else:
+
+    st.warning(
+        "The AI prediction differs from the selected "
+        "simulated experiment condition."
+    )
+
 st.caption(
-    "This is a model prediction from simulated data, "
-    "not a diagnosis of structural safety."
+    "IMPORTANT: This model uses simulated data. "
+    "Confidence percentages are model probability estimates, "
+    "not verified real-world reliability or structural safety."
 )
+
+
 
 # Feature importance
 
