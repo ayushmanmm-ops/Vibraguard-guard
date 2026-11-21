@@ -644,7 +644,53 @@ else:
         "No experiments saved yet. "
         "Click Save Experiment to record your first trial."
     )
+# ------------------------------------------
+# STAGE 4.3 - MULTIPLE EXPERIMENT COMPARISON
+# ------------------------------------------
 
+st.divider()
+st.header("📊 Stage 4.3: Experiment Comparison")
+
+if len(st.session_state.experiment_history) >= 2:
+
+    comparison_history = pd.DataFrame(
+        st.session_state.experiment_history
+    )
+
+    st.subheader("RMS Comparison")
+
+    st.bar_chart(
+        comparison_history.set_index("Trial")["RMS"]
+    )
+
+    st.subheader("Dominant Frequency Comparison")
+
+    st.bar_chart(
+        comparison_history.set_index("Trial")[
+            "Dominant Frequency (Hz)"
+        ]
+    )
+
+    st.subheader("AI Prediction Comparison")
+
+    st.dataframe(
+        comparison_history[
+            [
+                "Trial",
+                "Selected Condition",
+                "AI Prediction",
+                "AI Probability (%)"
+            ]
+        ],
+        use_container_width=True,
+        hide_index=True
+    )
+
+else:
+
+    st.info(
+        "Save at least two experiments to compare them."
+    )
 
 # Feature importance
 
