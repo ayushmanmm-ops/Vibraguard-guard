@@ -692,6 +692,40 @@ else:
         "Save at least two experiments to compare them."
     )
 
+# ------------------------------------------
+# STAGE 4.4 - DOWNLOAD EXPERIMENT REPORT
+# ------------------------------------------
+
+st.divider()
+st.header("📥 Stage 4.4: Download Experiment Report")
+
+if st.session_state.experiment_history:
+
+    report_df = pd.DataFrame(
+        st.session_state.experiment_history
+    )
+
+    report_csv = report_df.to_csv(
+        index=False
+    ).encode("utf-8")
+
+    st.download_button(
+        label="📥 Download Experiment History (CSV)",
+        data=report_csv,
+        file_name="VIBRAGUARD_Experiment_Report.csv",
+        mime="text/csv"
+    )
+
+    st.success(
+        "Your experiment report is ready to download."
+    )
+
+else:
+
+    st.info(
+        "Save at least one experiment before downloading a report."
+    )
+
 # Feature importance
 
 st.subheader("📌 Feature Importance")
