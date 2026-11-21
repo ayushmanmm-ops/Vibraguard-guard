@@ -286,3 +286,222 @@ st.divider()
 st.caption(
     "VIBRAGUARD | Engineering Challenge Prototype | Simulation Mode"
 )
+
+# ==========================================
+# STAGE 3: MACHINE LEARNING
+# ==========================================
+
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.dummy import DummyClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, confusion_matrix
+
+st.divider()
+st.header("🧠 Stage 3: Machine Learning")
+
+st.warning(
+    "SIMULATION ONLY: This model learns from "
+    "artificially generated vibration trials. "
+    "It has not been validated on a physical bridge."
+)
+
+# Generate independent simulated trials
+
+def create_ml_dataset():
+
+    rng = np.random.default_rng(2026)
+    rows = []
+
+    settings = {
+        "Baseline": (5.0, 0.10),
+        "Added Mass": (3.5, 0.13),
+        "Connection Variation": (2.5, 0.18)
+    }
+
+    sample_rate = 50
+    duration = 5
+    time = np.arange(0, duration, 1 / sample_rate)
+
+    for label, (base_frequency, base_amplitude) in settings.items():
+
+        for trial_id in range(60):
+
+            frequency = base_frequency + rng.normal(0, 0.25)
+            amplitude = base_amplitude * rng.uniform(0.8, 1.2)
+
+            x = (
+                amplitude * np.sin(2 * np.pi * frequency * time)
+                + rng.normal(0, 0.025, len(time))
+            )
+
+            y = (
+                amplitude * 0.7 * np.sin(
+                    2 * np.pi * (frequency + 1) * time
+                )
+                + rng.normal(0, 0.025, len(time))
+            )
+
+            z = (
+                amplitude * 0.5 * np.sin(
+                    2 * np.pi * frequency * time + 0.5
+                )
+                + rng.normal(0, 0.025, len(time))
+            )
+
+            features = analyse_vibration(
+                x, y, z, sample_rate
+            )
+
+            features["Condition"] = label
+            features["Trial ID"] = f"{label}_{trial_id}"
+
+            rows.append(features)
+
+    return pd.DataFrame(rows)
+
+
+# Build dataset
+
+ml_data = create_ml_dataset()
+
+feature_columns = [
+    "RMS",
+    "Standard Deviation",
+    "Peak-to-Peak",
+    "Dominant Frequency (Hz)"
+]
+
+X = ml_data[feature_columns]
+y = ml_data["Condition"]
+
+# Split complete trials into training and testing
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X,
+    y,
+    test_size=0.25,
+    random_state=42,
+    stratify=y
+)
+
+# Train Random Forest
+
+model = RandomForestClassifier(
+    n_estimators=150,
+    random_state=42,
+    class_weight="balanced"
+)
+
+model.fit(X_train, y_train)
+
+predictions = model.predict(X_test)
+
+# Simple baseline for comparison
+
+baseline = DummyClassifier(strategy="most_frequent")
+baseline.fit(X_train, y_train)
+
+baseline_predictions = baseline.predict(X_test)
+
+model_accuracy = accuracy_score(y_test, predictions)
+baseline_accuracy = accuracy_score(
+    y_test, baseline_predictions
+)
+
+# Display dataset
+
+st.subheader("📚 Simulated Training Dataset")
+
+st.write("Total independent trials:", len(ml_data))
+st.write("Training trials:", len(X_train))
+st.write("Testing trials:", len(X_test))
+
+st.dataframe(
+    ml_data.head(10),
+    use_container_width=True,
+    hide_index=True
+)
+
+# Display model performance
+
+st.subheader("📊 Model Evaluation")
+
+col1, col2 = st.columns(2)
+
+col1.metric(
+    "Random Forest Accuracy",
+    f"{model_accuracy * 100:.2f}%"
+)
+
+col2.metric(
+    "Simple Baseline Accuracy",
+    f"{baseline_accuracy * 100:.2f}%"
+)
+
+st.caption(
+    "These scores measure performance on held-out simulated trials, "
+    "not real bridge performance."
+)
+
+# Confusion matrix
+
+st.subheader("🔍 Confusion Matrix")
+
+class_names = list(settings.keys()) if False else [
+    "Baseline",
+    "Added Mass",
+    "Connection Variation"
+]
+
+cm = confusion_matrix(
+    y_test,
+    predictions,
+    labels=class_names
+)
+
+cm_df = pd.DataFrame(
+    cm,
+    index=class_names,
+    columns=class_names
+)
+
+st.write("Rows = actual condition; columns = predicted condition.")
+
+st.dataframe(
+    cm_df,
+    use_container_width=True
+)
+
+# Predict current simulated trial
+
+st.subheader("🔮 Current Trial Classification")
+
+current_features = pd.DataFrame(
+    [[metrics[name] for name in feature_columns]],
+    columns=feature_columns
+)
+
+current_prediction = model.predict(current_features)[0]
+
+st.metric(
+    "Model Classification",
+    current_prediction
+)
+
+st.caption(
+    "This is a model prediction from simulated data, "
+    "not a diagnosis of structural safety."
+)
+
+# Feature importance
+
+st.subheader("📌 Feature Importance")
+
+importance_df = pd.DataFrame({
+    "Feature": feature_columns,
+    "Importance": model.feature_importances_
+}).sort_values("Importance", ascending=False)
+
+st.bar_chart(
+    importance_df.set_index("Feature")
+)
